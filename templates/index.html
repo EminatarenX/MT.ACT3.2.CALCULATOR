@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Calculadora CFG</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='style.css') }}"
+        />
+        <!-- Agregamos D3.js para visualizar el árbol -->
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="calculator">
+                <input type="text" id="display" readonly />
+                <div class="buttons">
+                    <button onclick="appendToExpression('(')">(</button>
+                    <button onclick="appendToExpression(')')">)</button>
+                    <button onclick="clearDisplay()">C</button>
+                    <button onclick="appendToExpression('/')">/</button>
+                    <button onclick="appendToExpression('7')">7</button>
+                    <button onclick="appendToExpression('8')">8</button>
+                    <button onclick="appendToExpression('9')">9</button>
+                    <button onclick="appendToExpression('*')">*</button>
+                    <button onclick="appendToExpression('4')">4</button>
+                    <button onclick="appendToExpression('5')">5</button>
+                    <button onclick="appendToExpression('6')">6</button>
+                    <button onclick="appendToExpression('-')">-</button>
+                    <button onclick="appendToExpression('1')">1</button>
+                    <button onclick="appendToExpression('2')">2</button>
+                    <button onclick="appendToExpression('3')">3</button>
+                    <button onclick="appendToExpression('+')">+</button>
+                    <button onclick="appendToExpression('0')">0</button>
+                    <button onclick="appendToExpression('.')">.</button>
+                    <button onclick="calculate()">=</button>
+                    <button onclick="generateTree()">Tree</button>
+                </div>
+            </div>
+            <div id="tree-container"></div>
+        </div>
+
+        <script>
+            function appendToExpression(value) {
+                document.getElementById("display").value += value;
+            }
+
+            function clearDisplay() {
+                document.getElementById("display").value = "";
+                // Limpiar el árbol
+                document.getElementById("tree-container").innerHTML = "";
+            }
+
+            function calculate() {
+                const expression = document.getElementById("display").value;
+                fetch("/calculate", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ expression: expression }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            document.getElementById("display").value =
+                                data.result;
+                        } else {
+                            document.getElementById("display").value = "Error";
+                            console.error("Error:", data.error);
+                        }
+                    });
+            }
+
+            function generateTree() {
+                const expression = document.getElementById("display").value;
+                fetch("/generate_tree", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ expression: expression }),
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.success) {
+                            visualizeTree(data.tree);
+                        } else {
+                            console.error("Error:", data.error);
+                        }
+                    });
+            }
+
+            function visualizeTree(treeData) {
+                // Limpiar el contenedor anterior
+                document.getElementById("tree-container").innerHTML = "";
+
+                // Configuración del árbol
+                const margin = { top: 20, right: 90, bottom: 30, left: 90 };
+                const width = 800 - margin.left - margin.right;
+                const height = 500 - margin.top - margin.bottom;
+
+                // Crear el SVG
+                const svg = d3
+                    .select("#tree-container")
+                    .append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                    .attr(
+                        "transform",
+                        `translate(${margin.left},${margin.top})`,
+                    );
+
+                // Crear la jerarquía
+                const root = d3.hierarchy(treeData);
+
+                // Crear el layout del árbol
+                const treeLayout = d3.tree().size([height, width]);
+
+                // Asignar las posiciones
+                const treeData2 = treeLayout(root);
+
+                // Agregar los enlaces
+                svg.selectAll(".link")
+                    .data(root.links())
+                    .join("path")
+                    .attr("class", "link")
+                    .attr("fill", "none")
+                    .attr("stroke", "#555")
+                    .attr("stroke-opacity", 0.4)
+                    .attr("stroke-width", 1.5)
+                    .attr(
+                        "d",
+                        d3
+                            .linkVertical()
+                            .x((d) => d.y)
+                            .y((d) => d.x),
+                    );
+
+                // Agregar los nodos
+                const node = svg
+                    .selectAll(".node")
+                    .data(root.descendants())
+                    .join("g")
+                    .attr("class", "node")
+                    .attr("transform", (d) => `translate(${d.y},${d.x})`);
+
+                // Agregar círculos a los nodos
+                node.append("circle")
+                    .attr("r", 4)
+                    .style("fill", "#fff")
+                    .style("stroke", "steelblue")
+                    .style("stroke-width", 2);
+
+                // Agregar etiquetas a los nodos
+                node.append("text")
+                    .attr("dy", "0.31em")
+                    .attr("x", (d) => (d.children ? -6 : 6))
+                    .attr("text-anchor", (d) => (d.children ? "end" : "start"))
+                    .text((d) => d.data.name)
+                    .style("fill", "#fff");
+            }
+        </script>
+    </body>
+</html>

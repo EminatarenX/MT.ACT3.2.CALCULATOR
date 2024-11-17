@@ -1,0 +1,18 @@
+// calculator.lark
+start: expr
+
+?expr: term
+     | expr "+" term   -> add
+     | expr "-" term   -> subtract
+
+?term: factor
+     | term "*" factor -> multiply
+     | term "/" factor -> divide
+
+?factor: NUMBER        -> number
+       | "-" factor    -> neg
+       | "(" expr ")"
+
+%import common.NUMBER
+%import common.WS_INLINE
+%ignore WS_INLINE
