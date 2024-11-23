@@ -4,56 +4,468 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Calculadora CFG</title>
-        <link
-            rel="stylesheet"
-            href="{{ url_for('static', filename='style.css') }}"
-        />
-        <!-- Agregamos D3.js para visualizar el árbol -->
+        <style>
+  * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                min-height: 100vh;
+                background-color: #333;
+                color: #fff;
+                padding: 1rem;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                display: flex;
+                gap: 1rem;
+                flex-direction: column;
+            }
+
+            @media (min-width: 1200px) {
+                .container {
+                    flex-direction: row;
+                    align-items: flex-start;
+                }
+            }
+
+            .left-container {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+            }
+
+            @media (min-width: 1200px) {
+                .left-container {
+                    width: 400px;
+                    flex-shrink: 0;
+                }
+            }
+
+            .calculator {
+                background-color: #444;
+                padding: 1rem;
+                border-radius: 8px;
+                box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+                width: 100%;
+            }
+
+            .display-container {
+                position: relative;
+                margin-bottom: 1rem;
+                width: 100%;
+            }
+
+            #memory-indicator {
+                position: absolute;
+                top: 5px;
+                left: 5px;
+                font-size: 0.8em;
+                color: #aaa;
+            }
+
+            #display {
+                width: 100%;
+                height: 50px;
+                background-color: #333;
+                color: #fff;
+                text-align: right;
+                padding: 0.5rem;
+                border: none;
+                font-size: 1.5em;
+                border-radius: 5px;
+            }
+
+            .buttons {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 0.5rem;
+            }
+
+            @media (max-width: 400px) {
+                .buttons {
+                    gap: 0.3rem;
+                }
+            }
+
+            button {
+                padding: 0.8rem;
+                font-size: 1.2em;
+                border: none;
+                border-radius: 5px;
+                background-color: #666;
+                color: white;
+                cursor: pointer;
+                min-height: 45px;
+            }
+
+            @media (max-width: 400px) {
+                button {
+                    padding: 0.5rem;
+                    font-size: 1em;
+                    min-height: 40px;
+                }
+            }
+
+            button:hover {
+                background-color: #777;
+            }
+
+            button:active {
+                background-color: #888;
+            }
+
+            button.memory {
+                background-color: #555;
+                font-size: 0.9em;
+            }
+
+            button.backspace {
+                background-color: #8b0000;
+            }
+
+            #tree-container {
+                background-color: #444;
+                padding: 1rem;
+                border-radius: 8px;
+                box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+                width: 100%;
+                min-height: 300px;
+                overflow: auto;
+            }
+
+            @media (min-width: 1200px) {
+                #tree-container {
+                    flex: 1;
+                    min-height: 500px;
+                }
+            }
+
+            .token-table {
+                background-color: #444;
+                padding: 1rem;
+                border-radius: 8px;
+                box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+                width: 100%;
+                overflow-x: auto;
+            }
+
+            .token-table table {
+                width: 100%;
+                border-collapse: collapse;
+                min-width: 300px;
+            }
+
+            .token-table th,
+            .token-table td {
+                padding: 0.5rem;
+                text-align: left;
+                border: 1px solid #555;
+            }
+
+            .token-table th {
+                background-color: #333;
+            }
+
+            .link {
+                fill: none;
+                stroke: #555;
+                stroke-opacity: 0.4;
+                stroke-width: 1.5;
+            }
+
+            .node circle {
+                fill: #fff;
+                stroke: steelblue;
+                stroke-width: 2px;
+            }
+
+            .node text {
+                font-size: 12px;
+            }
+
+            svg {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
         <script src="https://d3js.org/d3.v7.min.js"></script>
     </head>
     <body>
         <div class="container">
-            <div class="calculator">
-                <input type="text" id="display" readonly />
-                <div class="buttons">
-                    <button onclick="appendToExpression('(')">(</button>
-                    <button onclick="appendToExpression(')')">)</button>
-                    <button onclick="clearDisplay()">C</button>
-                    <button onclick="appendToExpression('/')">/</button>
-                    <button onclick="appendToExpression('7')">7</button>
-                    <button onclick="appendToExpression('8')">8</button>
-                    <button onclick="appendToExpression('9')">9</button>
-                    <button onclick="appendToExpression('*')">*</button>
-                    <button onclick="appendToExpression('4')">4</button>
-                    <button onclick="appendToExpression('5')">5</button>
-                    <button onclick="appendToExpression('6')">6</button>
-                    <button onclick="appendToExpression('-')">-</button>
-                    <button onclick="appendToExpression('1')">1</button>
-                    <button onclick="appendToExpression('2')">2</button>
-                    <button onclick="appendToExpression('3')">3</button>
-                    <button onclick="appendToExpression('+')">+</button>
-                    <button onclick="appendToExpression('0')">0</button>
-                    <button onclick="appendToExpression('.')">.</button>
-                    <button onclick="calculate()">=</button>
-                    <button onclick="generateTree()">Tree</button>
+            <div class="left-container">
+                <div class="calculator">
+                    <div class="display-container">
+                        <div id="memory-indicator"></div>
+                        <input type="text" id="display" readonly />
+                    </div>
+                    <div class="buttons">
+                        <!-- Botones de memoria -->
+                        <button class="memory" onclick="memoryStore()">MS</button>
+                        <button class="memory" onclick="memoryRecall()">MR</button>
+                        <button class="memory" onclick="memoryAdd()">M+</button>
+                        <button class="memory" onclick="memorySubtract()">M-</button>
+                        <button class="memory" onclick="memoryClear()">MC</button>
+
+                        <!-- Botones normales -->
+                        <button onclick="appendToExpression('(')">(</button>
+                        <button onclick="appendToExpression(')')">)</button>
+                        <button onclick="clearDisplay()">C</button>
+                        <button class="backspace" onclick="backspace()">←</button>
+                        <button onclick="appendToExpression('/')">/</button>
+
+                        <button onclick="appendToExpression('7')">7</button>
+                        <button onclick="appendToExpression('8')">8</button>
+                        <button onclick="appendToExpression('9')">9</button>
+                        <button onclick="appendToExpression('*')">*</button>
+                        <button onclick="appendToExpression('-')">-</button>
+
+                        <button onclick="appendToExpression('4')">4</button>
+                        <button onclick="appendToExpression('5')">5</button>
+                        <button onclick="appendToExpression('6')">6</button>
+                        <button onclick="appendToExpression('+')">+</button>
+                        <button onclick="generateTree()">Tree</button>
+
+                        <button onclick="appendToExpression('1')">1</button>
+                        <button onclick="appendToExpression('2')">2</button>
+                        <button onclick="appendToExpression('3')">3</button>
+                        <button onclick="appendToExpression('.')">.</button>
+                        <button onclick="calculate()">=</button>
+
+                        <button onclick="appendToExpression('0')" style="grid-column: span 2;">0</button>
+                        <button style="visibility: hidden;"></button>
+                        <button style="visibility: hidden;"></button>
+                        <button style="visibility: hidden;"></button>
+                    </div>
+                </div>
+                <div class="token-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="token-table-body">
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div id="tree-container"></div>
         </div>
 
         <script>
+            // Variable para almacenar el valor en memoria
+            let memoryValue = 0;
+            let hasMemory = false;
+            
+            function updateMemoryIndicator() {
+                const indicator = document.getElementById('memory-indicator');
+                indicator.textContent = hasMemory ? 'M' : '';
+                // Añadir animación al cambiar el estado de memoria
+                indicator.style.transition = 'opacity 0.3s';
+                indicator.style.opacity = hasMemory ? '1' : '0';
+            }
+            
+            function memoryStore() {
+                const display = document.getElementById("display");
+                const currentValue = parseFloat(display.value);
+                
+                if (!isNaN(currentValue)) {
+                    memoryValue = currentValue;
+                    hasMemory = true;
+                    updateMemoryIndicator();
+                    // Efecto visual para confirmar la acción
+                    display.style.backgroundColor = '#2d4';
+                    setTimeout(() => display.style.backgroundColor = '#333', 200);
+                }
+            }
+            
+            function memoryRecall() {
+                if (hasMemory) {
+                    const display = document.getElementById("display");
+                    display.value = memoryValue;
+                    // Efecto visual para confirmar la acción
+                    display.style.backgroundColor = '#24d';
+                    setTimeout(() => display.style.backgroundColor = '#333', 200);
+                }
+            }
+            
+            function memoryAdd() {
+                const currentValue = parseFloat(document.getElementById("display").value);
+                if (!isNaN(currentValue)) {
+                    memoryValue += currentValue;
+                    hasMemory = true;
+                    updateMemoryIndicator();
+                    // Mostrar brevemente el nuevo valor en memoria
+                    const display = document.getElementById("display");
+                    const originalValue = display.value;
+                    display.value = `M: ${memoryValue}`;
+                    setTimeout(() => display.value = originalValue, 500);
+                }
+            }
+            
+            function memorySubtract() {
+                const currentValue = parseFloat(document.getElementById("display").value);
+                if (!isNaN(currentValue)) {
+                    memoryValue -= currentValue;
+                    hasMemory = true;
+                    updateMemoryIndicator();
+                    // Mostrar brevemente el nuevo valor en memoria
+                    const display = document.getElementById("display");
+                    const originalValue = display.value;
+                    display.value = `M: ${memoryValue}`;
+                    setTimeout(() => display.value = originalValue, 500);
+                }
+            }
+            
+            function memoryClear() {
+                memoryValue = 0;
+                hasMemory = false;
+                updateMemoryIndicator();
+                // Efecto visual para confirmar la acción
+                const display = document.getElementById("display");
+                display.style.backgroundColor = '#d42';
+                setTimeout(() => display.style.backgroundColor = '#333', 200);
+            }
+
+            function backspace() {
+                const display = document.getElementById("display");
+                display.value = display.value.slice(0, -1);
+            }
+
             function appendToExpression(value) {
                 document.getElementById("display").value += value;
             }
 
             function clearDisplay() {
                 document.getElementById("display").value = "";
-                // Limpiar el árbol
                 document.getElementById("tree-container").innerHTML = "";
+                document.getElementById("token-table-body").innerHTML = "";
             }
+            function getTokenType(token) {
+                // Si es un número entero (sin punto decimal)
+                if (/^\d+$/.test(token)) {
+                    return "Número entero";
+                }
+                // Si es la parte decimal de un número (comienza con punto)
+                if (/^\.\d+$/.test(token)) {
+                    return "Número decimal";
+                }
+                // Para otros tokens
+                switch (token) {
+                    case '+':
+                        return "Operador suma";
+                    case '-':
+                        return "Operador resta";
+                    case '*':
+                        return "Operador multiplicación";
+                    case '/':
+                        return "Operador división";
+                    case '(':
+                        return "Paréntesis izquierdo";
+                    case ')':
+                        return "Paréntesis derecho";
+                    case '.':
+                        return "Punto decimal";
+                    default:
+                        return "Desconocido";
+                }
+            }
+            
+            function updateTokenTable(expression) {
+                const tableBody = document.getElementById("token-table-body");
+                tableBody.innerHTML = "";
+                
+                // Modificamos la expresión regular para capturar números enteros, decimales y operadores por separado
+                const tokenPattern = /(\d+\.\d+|\d+|\.\d+|[+\-*/().])/g;
+                const tokens = expression.match(tokenPattern) || [];
+                
+                tokens.forEach(token => {
+                    // Si es un número decimal (contiene un punto)
+                    if (/\d+\.\d+/.test(token)) {
+                        // Separar la parte entera y decimal
+                        const [integerPart, decimalPart] = token.split('.');
+                        
+                        // Crear fila para la parte entera
+                        const integerRow = document.createElement("tr");
+                        const integerTokenCell = document.createElement("td");
+                        const integerTypeCell = document.createElement("td");
+                        
+                        integerTokenCell.textContent = integerPart;
+                        integerTypeCell.textContent = "Número entero";
+                        
+                        integerRow.appendChild(integerTokenCell);
+                        integerRow.appendChild(integerTypeCell);
+                        tableBody.appendChild(integerRow);
+                        
+                        // Crear fila para el punto decimal
+                        const pointRow = document.createElement("tr");
+                        const pointTokenCell = document.createElement("td");
+                        const pointTypeCell = document.createElement("td");
+                        
+                        pointTokenCell.textContent = ".";
+                        pointTypeCell.textContent = "Punto decimal";
+                        
+                        pointRow.appendChild(pointTokenCell);
+                        pointRow.appendChild(pointTypeCell);
+                        tableBody.appendChild(pointRow);
+                        
+                        // Crear fila para la parte decimal
+                        const decimalRow = document.createElement("tr");
+                        const decimalTokenCell = document.createElement("td");
+                        const decimalTypeCell = document.createElement("td");
+                        
+                        decimalTokenCell.textContent = decimalPart;
+                        decimalTypeCell.textContent = "Número decimal";
+                        
+                        decimalRow.appendChild(decimalTokenCell);
+                        decimalRow.appendChild(decimalTypeCell);
+                        tableBody.appendChild(decimalRow);
+                    } else {
+                        // Para todos los demás tokens (no decimales)
+                        const row = document.createElement("tr");
+                        const tokenCell = document.createElement("td");
+                        const typeCell = document.createElement("td");
+                        
+                        tokenCell.textContent = token;
+                        typeCell.textContent = getTokenType(token);
+                        
+                        row.appendChild(tokenCell);
+                        row.appendChild(typeCell);
+                        tableBody.appendChild(row);
+                    }
+                });
+            }
+            
+            function applyTableStyles() {
+                const style = document.createElement('style');
+                style.textContent = `
+                    .token-table tr:hover {
+                        background-color: #555;
+                    }
+                    .token-table td {
+                        transition: background-color 0.2s;
+                    }
+                    .token-table tr:nth-child(even) {
+                        background-color: #3a3a3a;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Llamar a la función de estilos cuando se carga la página
+            document.addEventListener('DOMContentLoaded', applyTableStyles);
 
             function calculate() {
                 const expression = document.getElementById("display").value;
+                updateTokenTable(expression);
                 fetch("/calculate", {
                     method: "POST",
                     headers: {
@@ -64,8 +476,7 @@
                     .then((response) => response.json())
                     .then((data) => {
                         if (data.success) {
-                            document.getElementById("display").value =
-                                data.result;
+                            document.getElementById("display").value = data.result;
                         } else {
                             document.getElementById("display").value = "Error";
                             console.error("Error:", data.error);
@@ -75,6 +486,7 @@
 
             function generateTree() {
                 const expression = document.getElementById("display").value;
+                updateTokenTable(expression);
                 fetch("/generate_tree", {
                     method: "POST",
                     headers: {
@@ -91,77 +503,98 @@
                         }
                     });
             }
-
             function visualizeTree(treeData) {
-                // Limpiar el contenedor anterior
                 document.getElementById("tree-container").innerHTML = "";
-
-                // Configuración del árbol
-                const margin = { top: 20, right: 90, bottom: 30, left: 90 };
-                const width = 800 - margin.left - margin.right;
-                const height = 500 - margin.top - margin.bottom;
-
-                // Crear el SVG
+            
+                const container = document.getElementById("tree-container");
+                const containerWidth = container.clientWidth;
+                const containerHeight = Math.max(300, container.clientHeight);
+            
+                const margin = {
+                    top: 30,
+                    right: 40,
+                    bottom: 40,
+                    left: 40
+                };
+            
+                const width = containerWidth - margin.left - margin.right;
+                const height = containerHeight - margin.top - margin.bottom;
+            
                 const svg = d3
                     .select("#tree-container")
                     .append("svg")
-                    .attr("width", width + margin.left + margin.right)
-                    .attr("height", height + margin.top + margin.bottom)
+                    .attr("viewBox", `0 0 ${containerWidth} ${containerHeight}`)
                     .append("g")
-                    .attr(
-                        "transform",
-                        `translate(${margin.left},${margin.top})`,
-                    );
-
-                // Crear la jerarquía
+                    .attr("transform", `translate(${margin.left},${margin.top})`);
+            
                 const root = d3.hierarchy(treeData);
-
-                // Crear el layout del árbol
                 const treeLayout = d3.tree().size([height, width]);
-
-                // Asignar las posiciones
                 const treeData2 = treeLayout(root);
-
-                // Agregar los enlaces
+            
+                // Enlaces más gruesos
                 svg.selectAll(".link")
                     .data(root.links())
                     .join("path")
                     .attr("class", "link")
                     .attr("fill", "none")
-                    .attr("stroke", "#555")
-                    .attr("stroke-opacity", 0.4)
-                    .attr("stroke-width", 1.5)
+                    .attr("stroke", "#666")  // Color más visible
+                    .attr("stroke-opacity", 1)  // Mayor opacidad
+                    .attr("stroke-width", 3)  // Líneas más gruesas
                     .attr(
                         "d",
-                        d3
-                            .linkVertical()
-                            .x((d) => d.y)
-                            .y((d) => d.x),
+                        d3.linkVertical()
+                            .x(d => d.y * 0.7)
+                            .y(d => d.x)
                     );
-
-                // Agregar los nodos
+            
+                // Nodos más grandes
                 const node = svg
                     .selectAll(".node")
                     .data(root.descendants())
                     .join("g")
                     .attr("class", "node")
-                    .attr("transform", (d) => `translate(${d.y},${d.x})`);
-
-                // Agregar círculos a los nodos
+                    .attr("transform", d => `translate(${d.y * 0.7},${d.x})`);
+            
+                // Círculos más grandes
                 node.append("circle")
-                    .attr("r", 4)
+                    .attr("r", 8)  // Radio más grande
                     .style("fill", "#fff")
                     .style("stroke", "steelblue")
-                    .style("stroke-width", 2);
-
-                // Agregar etiquetas a los nodos
+                    .style("stroke-width", 3);  // Borde más grueso
+            
+                // Texto más grande
                 node.append("text")
                     .attr("dy", "0.31em")
-                    .attr("x", (d) => (d.children ? -6 : 6))
-                    .attr("text-anchor", (d) => (d.children ? "end" : "start"))
-                    .text((d) => d.data.name)
-                    .style("fill", "#fff");
+                    .attr("x", d => (d.children ? -12 : 12))  // Mayor separación del nodo
+                    .attr("text-anchor", d => (d.children ? "end" : "start"))
+                    .text(d => d.data.name)
+                    .style("fill", "#fff")
+                    .style("font-size", "14px")  // Texto más grande
+                    .style("font-weight", "bold");  // Texto más visible
+            
+                // Zoom mejorado
+                const zoom = d3.zoom()
+                    .scaleExtent([0.3, 3])  // Mayor rango de zoom
+                    .on("zoom", (event) => {
+                        svg.attr("transform", event.transform);
+                    });
+            
+                d3.select("#tree-container svg")
+                    .call(zoom)
+                    .call(zoom.transform, d3.zoomIdentity);
             }
+
+            // Agregar evento de resize para actualizar el árbol cuando cambie el tamaño de la ventana
+            let resizeTimeout;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(() => {
+                    const expression = document.getElementById("display").value;
+                    if (expression) {
+                        generateTree();
+                    }
+                }, 250);
+            });
         </script>
     </body>
 </html>
